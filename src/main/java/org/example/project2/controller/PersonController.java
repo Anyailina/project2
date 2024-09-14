@@ -1,6 +1,7 @@
 package org.example.project2.controller;
 
 
+import org.example.project2.exception.EntityNotFoundException;
 import org.example.project2.model.Person;
 import org.example.project2.model.dto.PersonDto;
 import org.example.project2.repository.PersonRepo;
@@ -10,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/person")
@@ -27,17 +30,17 @@ public class PersonController {
     }
 
     @GetMapping("/{id}")
-    public PersonDto getPersonsById(@PathVariable Long id) {
+    public PersonDto getPersonsById(@PathVariable Long id) throws EntityNotFoundException {
         return personService.getPersonsById(id);
     }
 
     @PostMapping("/")
-    public PersonDto addPerson(@RequestBody Person person) {
+    public PersonDto addPerson(@RequestBody PersonDto person) {
         return personService.addPerson(person);
     }
 
     @PutMapping("/{id}")
-    public PersonDto updatePersonById(@PathVariable Long id, @RequestBody Person newPerson) {
+    public PersonDto updatePersonById(@PathVariable Long id, @RequestBody PersonDto newPerson) throws EntityNotFoundException {
         return personService.updatePersonById(id,newPerson);
     }
 
