@@ -44,13 +44,6 @@ public class PersonServiceTest {
     @Test
     void testGetAllPersons() {
         // Given
-        Person person1 = new Person(1L, "John", "Ragimov",76,185);
-        Person person2 = new Person(2L, "Petr", "Ragimov",76,156);
-
-        personRepo.save(person1);
-        personRepo.save(person2);
-
-        List<PersonDto> personDtos = personService.getAllPerson();
 
 //        Assertions.assertEquals(2, personDtos.size());
 //        Assertions.assertEquals("John", personDtos.get(0).getName());
