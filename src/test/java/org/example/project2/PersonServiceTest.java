@@ -4,10 +4,7 @@ import org.example.project2.model.Person;
 import org.example.project2.model.dto.PersonDto;
 import org.example.project2.repository.PersonRepo;
 import org.example.project2.service.PersonService;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,6 +52,11 @@ class PersonServiceTest {
         postgreSQLContainer.start();
     }
 
+    @AfterEach
+    void tearDown() {
+        personRepo.deleteAll();
+    }
+
     @AfterAll
     static void afterAll() {
         postgreSQLContainer.stop();
@@ -69,9 +71,9 @@ class PersonServiceTest {
 
     @Test
     void getAllPerson() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/person/"))
-                .andExpect(status().is2xxSuccessful());
         personRepo.save(person);
+        mockMvc.perform(get("/person/"))
+                .andExpect(status().is2xxSuccessful());
 
         Assertions.assertEquals(1, personRepo.findAll().size());
         Assertions.assertEquals(1, personService.getAllPerson().size());
@@ -79,15 +81,17 @@ class PersonServiceTest {
 
     @Test
     void getPersonsByIdTest() throws Exception {
-        personRepo.save(person);
-        MvcResult result = mockMvc.perform(get("/person/1"))
+        Person actualperson = new Person(7L, "John", "JKDF", 30, 167);
+        personRepo.save(actualperson);
+        System.out.println(personRepo.findAll());
+        MvcResult result = mockMvc.perform(get("/person/7"))
                 .andExpect(status().isOk())
                 .andReturn();
 
         Person actualPerson = personDtoToPerson(result);
 
         assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(person);
+                .isEqualToComparingFieldByFieldRecursively(actualperson);
     }
 
     @Test
@@ -100,7 +104,6 @@ class PersonServiceTest {
     @Test
     void addPersonTest() throws Exception {
         PersonDto personDto = personConverter.convert(person);
-        personRepo.save(person);
 
         MvcResult result = mockMvc.perform(post("/person/")
                         .content(objectMapper.writeValueAsString(personDto))
@@ -124,20 +127,21 @@ class PersonServiceTest {
 
     @Test
     void updatePersonTest() throws Exception {
-        personRepo.save(person);
+        Person actualperson = new Person(3L, "John", "JKDF", 30, 167);
+        PersonDto actualPersonDto = new PersonDto(3L, "Anna", "JKHJBF", 12, 176);
+        personRepo.save(actualperson);
 
-        MvcResult result = mockMvc.perform(put("/person/1")
-                        .content(objectMapper.writeValueAsString(personDto))
+        MvcResult result = mockMvc.perform(put("/person/3")
+                        .content(objectMapper.writeValueAsString(actualPersonDto))
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
 
-        Optional<Person> actualPersonOptional = personRepo.findById(1L);
+        Optional<Person> actualPersonOptional = personRepo.findById(3L);
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
-        Person actualPerson = personRepo.findById(1L).get();
+        Person actualPerson = personRepo.findById(3L).get();
         String content = result.getResponse().getContentAsString();
         PersonDto expectedPersonDto = objectMapper.readValue(content, PersonDto.class);
-
 
         assertThat(actualPerson)
                 .isEqualToComparingFieldByFieldRecursively(expectedPersonDto);
@@ -167,19 +171,20 @@ class PersonServiceTest {
 
     @Test
     void deletePerson() throws Exception {
-        personRepo.save(person);
+        Person actualperson = new Person(2L, "John", "JKDF", 30, 167);
+        personRepo.save(actualperson);
 
-        Optional<Person> actualPersonOptional = personRepo.findById(1L);
+        Optional<Person> actualPersonOptional = personRepo.findById(2L);
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
         Person actualPerson = actualPersonOptional.get();
 
         assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(person);
+                .isEqualToComparingFieldByFieldRecursively(actualperson);
 
-        mockMvc.perform(delete("/person/1", person))
+        mockMvc.perform(delete("/person/2", actualperson))
                 .andExpect(status().is2xxSuccessful());
 
-        Assertions.assertTrue(personRepo.findById(1L).isEmpty());
+        Assertions.assertTrue(personRepo.findById(2L).isEmpty());
     }
 
     @Test
