@@ -1,12 +1,11 @@
 package org.example.project2.model.dto;
 
 
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-
-import javax.validation.constraints.*;
 
 
 @Accessors(chain = true)

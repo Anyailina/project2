@@ -57,7 +57,7 @@ public class PersonService {
                     personRepo.save(existingPerson);
                     return personDto;
                 })
-                .orElseThrow(EntityNotFoundException::new);
+                .orElseThrow(IdNotCorrectException::new);
     }
 
 
