@@ -1,13 +1,20 @@
 package org.example.project2;
 
+
 import org.example.project2.model.Person;
 import org.example.project2.model.dto.PersonDto;
 import org.example.project2.repository.PersonRepo;
 import org.example.project2.service.PersonService;
 import org.junit.jupiter.api.*;
+import org.skyscreamer.jsonassert.Customization;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
+import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,13 +26,12 @@ import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.shaded.com.github.dockerjava.core.MediaType;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.skyscreamer.jsonassert.JSONCompareMode.STRICT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 
 @Testcontainers
 @SpringBootTest
@@ -44,8 +50,6 @@ class PersonServiceTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Person person = new Person(1L, "John", "JKDF", 30, 167);
-    private final Person personWithWrongBody = new Person(null, "", "jfksld", 30, 5);
-    private final PersonDto personDto = new PersonDto(1L, "Anna", "JKHJBF", 12, 176);
 
     @BeforeAll
     static void beforeAll() {
@@ -81,17 +85,15 @@ class PersonServiceTest {
 
     @Test
     void getPersonsByIdTest() throws Exception {
-        Person actualperson = new Person(7L, "John", "JKDF", 30, 167);
-        personRepo.save(actualperson);
-        System.out.println(personRepo.findAll());
-        MvcResult result = mockMvc.perform(get("/person/7"))
+        Person savedPerson = personRepo.save(person);
+        PersonDto personDto = personConverter.convert(savedPerson);
+
+        MvcResult result = mockMvc.perform(get("/person/" + savedPerson.getId()))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Person actualPerson = personDtoToPerson(result);
-
-        assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(actualperson);
+        String actualPersonDto = result.getResponse().getContentAsString();
+        JSONAssert.assertEquals(objectMapper.writeValueAsString(personDto), actualPersonDto, new CustomComparator(STRICT));
     }
 
     @Test
@@ -102,99 +104,91 @@ class PersonServiceTest {
     }
 
     @Test
-    void addPersonTest() throws Exception {
-        PersonDto personDto = personConverter.convert(person);
+    void addPersonTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request) throws Exception {
+        String requestPersonDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         MvcResult result = mockMvc.perform(post("/person/")
-                        .content(objectMapper.writeValueAsString(personDto))
+                        .content(requestPersonDto)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().is2xxSuccessful())
                 .andReturn();
-        Person actualPerson = personDtoToPerson(result);
-        assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(person);
+
+        String actualPersonDto = result.getResponse().getContentAsString();
+        JSONAssert.assertEquals(requestPersonDto, actualPersonDto, new CustomComparator(STRICT, new Customization("id", (it1, it2) -> true)));
     }
 
     @Test
-    void addPersonWithWrongBody() throws Exception {
-        PersonDto personDto = personConverter.convert(personWithWrongBody);
+    void addPersonWithWrongBody(@Value("classpath:stub/updatePersonDtoBadRequest.json") Resource request) throws Exception {
+        String personWithWrongBody = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(post("/person/")
-                        .content(objectMapper.writeValueAsString(personDto))
+                        .content(personWithWrongBody)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void updatePersonTest() throws Exception {
-        Person actualperson = new Person(3L, "John", "JKDF", 30, 167);
-        PersonDto actualPersonDto = new PersonDto(3L, "Anna", "JKHJBF", 12, 176);
-        personRepo.save(actualperson);
+    void updatePersonTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request
+    ) throws Exception {
+        String requestPersonDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        Person savedPerson = personRepo.save(person);
+        long savedPersonId = savedPerson.getId();
 
-        MvcResult result = mockMvc.perform(put("/person/3")
-                        .content(objectMapper.writeValueAsString(actualPersonDto))
+        mockMvc.perform(put("/person/" + savedPersonId)
+                        .content(requestPersonDto)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
-                .andExpect(status().is2xxSuccessful())
-                .andReturn();
+                .andExpect(status().is2xxSuccessful());
 
-        Optional<Person> actualPersonOptional = personRepo.findById(3L);
+        Optional<Person> actualPersonOptional = personRepo.findById(savedPersonId);
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
-        Person actualPerson = personRepo.findById(3L).get();
-        String content = result.getResponse().getContentAsString();
-        PersonDto expectedPersonDto = objectMapper.readValue(content, PersonDto.class);
+        Person actualPerson = personRepo.findById(savedPersonId).get();
+        PersonDto actualPersonDto = personConverter.convert(actualPerson);
+        System.out.println(requestPersonDto);
+        System.out.println(objectMapper.writeValueAsString(actualPersonDto));
 
-        assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(expectedPersonDto);
+        JSONAssert.assertEquals(requestPersonDto,
+                objectMapper.writeValueAsString(actualPersonDto), new CustomComparator(JSONCompareMode.STRICT, new Customization("id", (it1, it2) -> true)));
     }
 
     @Test
-    void updateWithWrongPersonTest() throws Exception {
-        PersonDto personDtoWrongBody = new PersonDto(null, "", "jfksld", 30, 5);
-        personRepo.save(person);
+    void updateWithWrongPersonTest(@Value("classpath:stub/updatePersonDtoBadRequest.json") Resource request) throws Exception {
+        String personDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(put("/person/")
-                        .content(objectMapper.writeValueAsString(personDtoWrongBody))
+                        .content(personDto)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().is4xxClientError());
     }
 
     @Test
-    void updateWithWrongIdTest() throws Exception {
+    void updateWithWrongIdTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request) throws Exception {
         personRepo.save(person);
+        String personDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(put("/person/-1")
-                        .content(objectMapper.writeValueAsString(personDto))
+                        .content(personDto)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().is4xxClientError());
     }
-
 
     @Test
     void deletePerson() throws Exception {
-        Person actualperson = new Person(2L, "John", "JKDF", 30, 167);
-        personRepo.save(actualperson);
-
-        Optional<Person> actualPersonOptional = personRepo.findById(2L);
+        Person savedperson = personRepo.save(person);
+        Optional<Person> actualPersonOptional = personRepo.findById(savedperson.getId());
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
         Person actualPerson = actualPersonOptional.get();
 
-        assertThat(actualPerson)
-                .isEqualToComparingFieldByFieldRecursively(actualperson);
+        JSONAssert.assertEquals(objectMapper.writeValueAsString(savedperson), objectMapper.writeValueAsString(actualPerson), new CustomComparator(STRICT));
 
-        mockMvc.perform(delete("/person/2", actualperson))
+        mockMvc.perform(delete("/person/" + savedperson.getId()))
                 .andExpect(status().is2xxSuccessful());
 
-        Assertions.assertTrue(personRepo.findById(2L).isEmpty());
+        Assertions.assertTrue(personRepo.findById(savedperson.getId()).isEmpty());
     }
 
     @Test
     void deletePersonWithWrongId() throws Exception {
         mockMvc.perform(delete("/person/-7")).andExpect(status().is2xxSuccessful());
-    }
-
-    private Person personDtoToPerson(MvcResult result) throws IOException {
-        String content = result.getResponse().getContentAsString();
-        return objectMapper.readValue(content, Person.class);
     }
 }
 
