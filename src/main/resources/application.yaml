@@ -1,0 +1,19 @@
+errorDetails:
+  user-not-found:
+    code: "USER_NOT_FOUND"
+    message: "User not found."
+    httpCode: 404
+  incorrect-user:
+    code: "INCORRECT_USER"
+    message: "The user is invalid."
+    httpCode: 400
+  id-not-correct:
+    code: "ID_NOT_CORRECT"
+    message: "The not correct"
+    http-code: 400
+  default:
+    code: "UNKNOWN ERROR"
+    message: "The error is unknown."
+    httpCode: 500
+
+

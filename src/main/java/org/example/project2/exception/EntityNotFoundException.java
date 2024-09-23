@@ -1,8 +1,9 @@
 package org.example.project2.exception;
 
-public class EntityNotFoundException extends Exception{
+
+public class EntityNotFoundException extends InternalException {
 
     public EntityNotFoundException(){
-        super("Entity not found");
+        super(ExceptionEnum.USER_NOT_FOUND);
     }
 }
