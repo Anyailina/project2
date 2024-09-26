@@ -33,6 +33,7 @@ dependencies {
 
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
     compileOnly 'org.projectlombok:lombok'
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
     runtimeOnly 'org.postgresql:postgresql:42.7.3'
     annotationProcessor 'org.projectlombok:lombok'
 
