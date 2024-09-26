@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:latest
-#    restart: always
+    restart: always
     container_name: postgres-testdock
     environment:
       POSTGRES_USER: myuser

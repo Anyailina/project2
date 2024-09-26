@@ -1,7 +1,6 @@
 package org.example.project2.controller;
 
 import jakarta.validation.Valid;
-import org.example.project2.exception.EntityNotFoundException;
 import org.example.project2.model.dto.PersonDto;
 import org.example.project2.service.PersonService;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +23,7 @@ public class PersonController {
     }
 
     @GetMapping("/{id}")
-    public PersonDto getPersonsById(@PathVariable Long id) throws EntityNotFoundException {
+    public PersonDto getPersonsById(@PathVariable Long id) {
         return personService.getPersonsById(id);
     }
 
@@ -34,7 +33,7 @@ public class PersonController {
     }
 
     @PutMapping("/{id}")
-    public PersonDto updatePersonById(@PathVariable Long id, @RequestBody PersonDto newPerson) throws EntityNotFoundException {
+    public PersonDto updatePersonById(@PathVariable Long id, @RequestBody PersonDto newPerson) {
         return personService.updatePersonById(id, newPerson);
     }
 

@@ -1,11 +1,15 @@
 package org.example.project2;
 
 
-import org.example.project2.model.Person;
+import org.example.project2.configuration.TestConfiguration;
+import org.example.project2.converter.PersonConverter;
 import org.example.project2.model.dto.PersonDto;
-import org.example.project2.repository.PersonRepo;
+import org.example.project2.model.entity.Person;
+import org.example.project2.repository.PersonRepository;
 import org.example.project2.service.PersonService;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -14,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -33,38 +38,25 @@ import static org.skyscreamer.jsonassert.JSONCompareMode.STRICT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import(value = {
+        TestConfiguration.class
+})
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
 class PersonServiceTest {
+    @Container
+    private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
+    @Autowired
+    private ObjectMapper objectMapper;
     @Autowired
     private MockMvc mockMvc;
     @Autowired
-    private PersonRepo personRepo;
+    private PersonRepository personRepository;
     @Autowired
     private PersonService personService;
     @Autowired
     private PersonConverter personConverter;
-    @Container
-    private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Person person = new Person(1L, "John", "JKDF", 30, 167);
-
-    @BeforeAll
-    static void beforeAll() {
-        postgreSQLContainer.start();
-    }
-
-    @AfterEach
-    void tearDown() {
-        personRepo.deleteAll();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        postgreSQLContainer.stop();
-    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -73,19 +65,24 @@ class PersonServiceTest {
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
     }
 
+    @AfterEach
+    void tearDown() {
+        personRepository.deleteAll();
+    }
+
     @Test
     void getAllPerson() throws Exception {
-        personRepo.save(person);
+        createPerson();
         mockMvc.perform(get("/person/"))
                 .andExpect(status().is2xxSuccessful());
 
-        Assertions.assertEquals(1, personRepo.findAll().size());
+        Assertions.assertEquals(1, personRepository.findAll().size());
         Assertions.assertEquals(1, personService.getAllPerson().size());
     }
 
     @Test
     void getPersonsByIdTest() throws Exception {
-        Person savedPerson = personRepo.save(person);
+        Person savedPerson = createPerson();
         PersonDto personDto = personConverter.convert(savedPerson);
 
         MvcResult result = mockMvc.perform(get("/person/" + savedPerson.getId()))
@@ -131,7 +128,7 @@ class PersonServiceTest {
     void updatePersonTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request
     ) throws Exception {
         String requestPersonDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        Person savedPerson = personRepo.save(person);
+        Person savedPerson = createPerson();
         long savedPersonId = savedPerson.getId();
 
         mockMvc.perform(put("/person/" + savedPersonId)
@@ -139,9 +136,9 @@ class PersonServiceTest {
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
                 .andExpect(status().is2xxSuccessful());
 
-        Optional<Person> actualPersonOptional = personRepo.findById(savedPersonId);
+        Optional<Person> actualPersonOptional = personRepository.findById(savedPersonId);
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
-        Person actualPerson = personRepo.findById(savedPersonId).get();
+        Person actualPerson = personRepository.findById(savedPersonId).get();
         PersonDto actualPersonDto = personConverter.convert(actualPerson);
 
         JSONAssert.assertEquals(requestPersonDto,
@@ -160,7 +157,7 @@ class PersonServiceTest {
 
     @Test
     void updateWithWrongIdTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request) throws Exception {
-        personRepo.save(person);
+        createPerson();
         String personDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(put("/person/-1")
@@ -171,8 +168,8 @@ class PersonServiceTest {
 
     @Test
     void deletePerson() throws Exception {
-        Person savedperson = personRepo.save(person);
-        Optional<Person> actualPersonOptional = personRepo.findById(savedperson.getId());
+        Person savedperson = createPerson();
+        Optional<Person> actualPersonOptional = personRepository.findById(savedperson.getId());
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
         Person actualPerson = actualPersonOptional.get();
 
@@ -181,12 +178,18 @@ class PersonServiceTest {
         mockMvc.perform(delete("/person/" + savedperson.getId()))
                 .andExpect(status().is2xxSuccessful());
 
-        Assertions.assertTrue(personRepo.findById(savedperson.getId()).isEmpty());
+        Assertions.assertTrue(personRepository.findById(savedperson.getId()).isEmpty());
     }
 
     @Test
     void deletePersonWithWrongId() throws Exception {
         mockMvc.perform(delete("/person/-7")).andExpect(status().is2xxSuccessful());
+    }
+
+    private Person createPerson() {
+        Person person = new Person(1L, "John", "JKDF", 30, 167);
+        personRepository.save(person);
+        return person;
     }
 }
 

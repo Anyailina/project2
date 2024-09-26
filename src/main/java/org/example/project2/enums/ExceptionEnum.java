@@ -1,4 +1,4 @@
-package org.example.project2.exception;
+package org.example.project2.enums;
 
 public enum ExceptionEnum {
     USER_NOT_FOUND,

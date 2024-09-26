@@ -1,11 +1,11 @@
 package org.example.project2.service;
 
-import org.example.project2.PersonConverter;
-import org.example.project2.exception.EntityNotFoundException;
-import org.example.project2.exception.IdNotCorrectException;
-import org.example.project2.model.Person;
+import org.example.project2.converter.PersonConverter;
+import org.example.project2.exception.impl.EntityNotFoundException;
+import org.example.project2.exception.impl.IdNotCorrectException;
 import org.example.project2.model.dto.PersonDto;
-import org.example.project2.repository.PersonRepo;
+import org.example.project2.model.entity.Person;
+import org.example.project2.repository.PersonRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,16 +13,16 @@ import java.util.List;
 
 @Service
 public class PersonService {
-    private final PersonRepo personRepo;
+    private final PersonRepository personRepository;
     private final PersonConverter personConverter;
 
-    public PersonService(PersonRepo personRepo, PersonConverter personConverter) {
-        this.personRepo = personRepo;
+    public PersonService(PersonRepository personRepository, PersonConverter personConverter) {
+        this.personRepository = personRepository;
         this.personConverter = personConverter;
     }
 
     public List<PersonDto> getAllPerson() {
-        List<Person> personList = personRepo.findAll();
+        List<Person> personList = personRepository.findAll();
 
         if (personList.isEmpty()) {
             return new ArrayList<>();
@@ -33,7 +33,7 @@ public class PersonService {
 
 
     public PersonDto getPersonsById(Long id) throws IdNotCorrectException {
-        return personRepo.findById(id)
+        return personRepository.findById(id)
                 .map(personConverter::convert)
                 .orElseThrow(IdNotCorrectException::new);
     }
@@ -41,20 +41,20 @@ public class PersonService {
 
     public PersonDto addPerson(PersonDto personDto) {
         Person person = personConverter.convert(personDto);
-        personRepo.save(person);
+        personRepository.save(person);
         personDto.setId(person.getId());
         return personDto;
     }
 
 
-    public PersonDto updatePersonById(Long id, PersonDto personDto)  throws EntityNotFoundException {
-        return personRepo.findById(id)
+    public PersonDto updatePersonById(Long id, PersonDto personDto) throws EntityNotFoundException {
+        return personRepository.findById(id)
                 .map(existingPerson -> {
                     existingPerson.setName(personDto.getName());
                     existingPerson.setAge(personDto.getAge());
                     existingPerson.setSurname(personDto.getSurname());
                     existingPerson.setHeight(personDto.getHeight());
-                    personRepo.save(existingPerson);
+                    personRepository.save(existingPerson);
                     return personDto;
                 })
                 .orElseThrow(IdNotCorrectException::new);
@@ -62,7 +62,7 @@ public class PersonService {
 
 
     public void deletePersonByID(Long id) {
-        personRepo.deleteById(id);
+        personRepository.deleteById(id);
     }
 }
 

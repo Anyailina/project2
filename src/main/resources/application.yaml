@@ -1,3 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/mydatabase
+    username: myuser
+    password: mypassword
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  liquibase:
+    change-log: /db/changelog.xml
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    url: ${spring.datasource.url}
+
 errorDetails:
   user-not-found:
     code: "USER_NOT_FOUND"
@@ -15,5 +36,4 @@ errorDetails:
     code: "UNKNOWN ERROR"
     message: "The error is unknown."
     httpCode: 500
-
 

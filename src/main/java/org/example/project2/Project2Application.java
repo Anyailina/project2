@@ -1,6 +1,6 @@
 package org.example.project2;
 
-import org.example.project2.exception.ExceptionDetails;
+import org.example.project2.configuration.property.ExceptionDetails;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
