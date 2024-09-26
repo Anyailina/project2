@@ -143,8 +143,6 @@ class PersonServiceTest {
         Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
         Person actualPerson = personRepo.findById(savedPersonId).get();
         PersonDto actualPersonDto = personConverter.convert(actualPerson);
-        System.out.println(requestPersonDto);
-        System.out.println(objectMapper.writeValueAsString(actualPersonDto));
 
         JSONAssert.assertEquals(requestPersonDto,
                 objectMapper.writeValueAsString(actualPersonDto), new CustomComparator(JSONCompareMode.STRICT, new Customization("id", (it1, it2) -> true)));
