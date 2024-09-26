@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Enumeration;
 
@@ -43,18 +42,18 @@ public class LoggingInterceptor implements HandlerInterceptor {
             logger.info("{}: {}", headerName, request.getHeader(headerName));
         }
 
-        StringBuilder requestBody = new StringBuilder();
-        BufferedReader reader = request.getReader();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            requestBody.append(line);
-        }
-
-        if (!requestBody.isEmpty()) {
-            logger.info("Request Body: {}", requestBody);
-        } else {
-            logger.info("Request Body is empty.");
-        }
+        //StringBuilder requestBody = new StringBuilder();
+//        BufferedReader reader = request.getReader();
+//        String line;
+//        while ((line = reader.readLine()) != null) {
+//            requestBody.append(line);
+//        }
+//
+//        if (!requestBody.isEmpty()) {
+//            logger.info("Request Body: {}", requestBody);
+//        } else {
+//            logger.info("Request Body is empty.");
+//        }
     }
 
     private void logResponseDetails(HttpServletResponse response) {

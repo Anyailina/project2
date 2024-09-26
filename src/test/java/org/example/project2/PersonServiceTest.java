@@ -188,8 +188,7 @@ class PersonServiceTest {
 
     private Person createPerson() {
         Person person = new Person(1L, "John", "JKDF", 30, 167);
-        personRepository.save(person);
-        return person;
+        return personRepository.save(person);
     }
 }
 
