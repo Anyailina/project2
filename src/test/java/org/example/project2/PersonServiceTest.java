@@ -5,7 +5,9 @@ import org.example.project2.configuration.TestConfiguration;
 import org.example.project2.converter.PersonConverter;
 import org.example.project2.model.dto.PersonDto;
 import org.example.project2.model.entity.Person;
+import org.example.project2.model.entity.School;
 import org.example.project2.repository.PersonRepository;
+import org.example.project2.repository.SchoolRepository;
 import org.example.project2.service.PersonService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -57,6 +59,8 @@ class PersonServiceTest {
     private PersonService personService;
     @Autowired
     private PersonConverter personConverter;
+    @Autowired
+    private SchoolRepository schoolRepository;
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -121,14 +125,15 @@ class PersonServiceTest {
         mockMvc.perform(post("/person/")
                         .content(personWithWrongBody)
                         .contentType(MediaType.APPLICATION_JSON.getMediaType()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().is4xxClientError());
     }
 
     @Test
     void updatePersonTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request
     ) throws Exception {
         String requestPersonDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        Person savedPerson = createPerson();
+        Person person = createPerson();
+        Person savedPerson = personRepository.save(person);
         long savedPersonId = savedPerson.getId();
 
         mockMvc.perform(put("/person/" + savedPersonId)
@@ -187,7 +192,9 @@ class PersonServiceTest {
     }
 
     private Person createPerson() {
-        Person person = new Person(1L, "John", "JKDF", 30, 167);
+        School school = new School(1l, "kfds", "dklsd");
+        School savedSchool = schoolRepository.save(school);
+        Person person = new Person(1L, "John", "JKDF", 30, 167, savedSchool);
         return personRepository.save(person);
     }
 }

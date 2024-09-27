@@ -3,5 +3,10 @@
   "name": "",
   "surname": "JKDF",
   "age": 12,
-  "height": 176
+  "height": 176,
+  "school": {
+    "id": 1,
+    "name": "kfds",
+    "city": "dklsd"
+  }
 }
