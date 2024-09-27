@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
-class PersonServiceTest {
+class PersonApiTest {
     @Container
     private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
     @Autowired
@@ -105,7 +105,7 @@ class PersonServiceTest {
     }
 
     @Test
-    void addPersonTest(@Value("classpath:stub/updatePersonDtoRequest.json") Resource request) throws Exception {
+    void addPersonTest(@Value("classpath:stub/addPersonDtoRequest.json") Resource request) throws Exception {
         String requestPersonDto = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         MvcResult result = mockMvc.perform(post("/person/")
@@ -119,7 +119,7 @@ class PersonServiceTest {
     }
 
     @Test
-    void addPersonWithWrongBody(@Value("classpath:stub/updatePersonDtoBadRequest.json") Resource request) throws Exception {
+    void addPersonWithWrongBody(@Value("classpath:stub/addPersonDtoBadRequest.json") Resource request) throws Exception {
         String personWithWrongBody = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
         mockMvc.perform(post("/person/")
@@ -191,11 +191,67 @@ class PersonServiceTest {
         mockMvc.perform(delete("/person/-7")).andExpect(status().is2xxSuccessful());
     }
 
-    private Person createPerson() {
-        School school = new School(1l, "kfds", "dklsd");
+    @Test
+    void addPersonToSchool() throws Exception {
+        Person person = createPerson();
+        School school = new School(2L, "kclds;", "dsfmls", false);
         School savedSchool = schoolRepository.save(school);
+
+        mockMvc.perform(put("/person/" + person.getId() + "/school/" + savedSchool.getId()))
+                .andExpect(status().is2xxSuccessful()).andReturn();
+
+        Optional<Person> actualPersonOptional = personRepository.findById(person.getId());
+        Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
+        Person actualPerson = actualPersonOptional.get();
+
+        JSONAssert.assertEquals(objectMapper.writeValueAsString(actualPerson.getSchool()), objectMapper.writeValueAsString(savedSchool), new CustomComparator(STRICT));
+    }
+
+    @Test
+    void addPersonToSchoolWithWrongId() throws Exception {
+        Person person = createPerson();
+        School school = new School(2L, "kclds;", "dsfmls", false);
+        School savedSchool = schoolRepository.save(school);
+
+        mockMvc.perform(put("/person/" + "-1" + "/school/" + savedSchool.getId()))
+                .andExpect(status().is4xxClientError()).andReturn();
+
+        mockMvc.perform(put("/person/" + person.getId() + "/school/" + "-1"))
+                .andExpect(status().is4xxClientError()).andReturn();
+    }
+
+    @Test
+    void deletePersonToSchoolWithWrongId() throws Exception {
+        createPerson();
+
+        mockMvc.perform(put("/person/deleteSchool/" + "-1"))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void deletePersonToSchool() throws Exception {
+        Person person = createPerson();
+        person.getSchool().setDeleted(true);
+
+        mockMvc.perform(delete("/person/deleteSchool/" + person.getId()))
+                .andExpect(status().is2xxSuccessful());
+
+        Optional<Person> actualPersonOptional = personRepository.findById(person.getId());
+        Assertions.assertTrue(actualPersonOptional.isPresent(), "Person not found");
+        Person actualPerson = actualPersonOptional.get();
+
+        JSONAssert.assertEquals(objectMapper.writeValueAsString(person), objectMapper.writeValueAsString(actualPerson), new CustomComparator(STRICT));
+    }
+
+    private Person createPerson() {
+        School savedSchool = createSchool();
         Person person = new Person(1L, "John", "JKDF", 30, 167, savedSchool);
         return personRepository.save(person);
+    }
+
+    private School createSchool() {
+        School school = new School(1L, "kfds", "dklsd", false);
+        return schoolRepository.save(school);
     }
 }
 

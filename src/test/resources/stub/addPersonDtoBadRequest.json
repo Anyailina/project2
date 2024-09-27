@@ -1,7 +1,13 @@
 {
-  "id": 1,
-  "name": "Anna",
+  "id": null,
+  "name": "A",
   "surname": "JKDF",
   "age": 12,
-  "height": 176
+  "height": 176,
+  "school": {
+    "id": 1,
+    "name": "kfds",
+    "city": "dklsd",
+    "deleted": false
+  }
 }
