@@ -76,6 +76,7 @@ class PersonApiTest {
 
     @Test
     void getAllPerson() throws Exception {
+        System.out.println("fklsd");
         createPerson();
         mockMvc.perform(get("/person/"))
                 .andExpect(status().is2xxSuccessful());
