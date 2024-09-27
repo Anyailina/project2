@@ -42,4 +42,15 @@ public class PersonController {
         personService.deletePersonByID(id);
     }
 
+    @PutMapping("/{personId}/school/{schoolId}")
+    public PersonDto addPersonToSchool(@PathVariable Long personId,
+                                       @PathVariable Long schoolId) {
+        return personService.addPersonToSchool(personId, schoolId);
+    }
+
+    @DeleteMapping("/deleteSchool/{personId}")
+    public PersonDto deletePersonToSchool(@PathVariable Long personId) {
+        return personService.deletePersonToSchool(personId);
+    }
+
 }
