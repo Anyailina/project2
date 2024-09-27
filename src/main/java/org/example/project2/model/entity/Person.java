@@ -1,18 +1,18 @@
 package org.example.project2.model.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 
 @Entity
 @Table(name = "Persons")
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@ToString
+@Data
 @Accessors(chain = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class Person {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,4 +21,7 @@ public class Person {
     private String surname;
     private Integer age;
     private Integer height;
+    @ManyToOne
+    @JoinColumn(name = "school_fk")
+    private School school;
 }

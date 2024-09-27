@@ -29,4 +29,5 @@ public class PersonDto {
     @Min(value = 150)
     @Max(value = 230)
     private Integer height;
+    private SchoolDto school;
 }

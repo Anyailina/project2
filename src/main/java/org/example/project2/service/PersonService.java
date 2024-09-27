@@ -41,8 +41,8 @@ public class PersonService {
 
     public PersonDto addPerson(PersonDto personDto) {
         Person person = personConverter.convert(personDto);
-        personRepository.save(person);
-        personDto.setId(person.getId());
+        Person savedPerson = personRepository.save(person);
+        personDto.setId(savedPerson.getId());
         return personDto;
     }
 
