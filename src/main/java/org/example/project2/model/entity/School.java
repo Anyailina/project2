@@ -19,13 +19,15 @@ public class School {
     private Long id;
     private String name;
     private String city;
+    private Boolean deleted;
     @JsonIgnore
     @OneToMany(mappedBy = "school")
     private List<Person> persons;
 
-    public School(Long id, String name, String city) {
+    public School(Long id, String name, String city, Boolean deleted) {
         this.id = id;
         this.name = name;
         this.city = city;
+        this.deleted = deleted;
     }
 }

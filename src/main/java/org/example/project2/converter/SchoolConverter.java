@@ -9,12 +9,14 @@ public class SchoolConverter {
     public SchoolDto convert(School school) {
         return new SchoolDto().setId(school.getId())
                 .setName(school.getName())
-                .setCity(school.getCity());
+                .setCity(school.getCity())
+                .setDeleted(school.getDeleted());
     }
 
     public School convert(SchoolDto schoolDto) {
         return new School().setId(schoolDto.getId())
                 .setName(schoolDto.getName())
-                .setCity(schoolDto.getCity());
+                .setCity(schoolDto.getCity())
+                .setDeleted(schoolDto.getDeleted());
     }
 }
